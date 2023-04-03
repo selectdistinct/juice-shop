@@ -21,7 +21,7 @@ function replaceStringInFile(filepath: string, searchValue: string, replaceValue
       return console.log(err);
     }
     let result = data.replace(regEx, replaceValue);
-    fs.writeFile(appRoutingFile, result, 'utf8', function (err) {
+    fs.writeFile(filepath, result, 'utf8', function (err) {
       if (err) return console.log(err);
     });
   });
