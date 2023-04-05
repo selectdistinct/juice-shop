@@ -6,24 +6,38 @@
 const appRoutingFile = "frontend/src/app/app.routing.ts"
 const serverFile = "server.ts"
 const easterEggFile = "ftp/eastere.gg"
-const singleQuote = String.fromCharCode(39);
+const registerWebsocketEventsFile = "lib/startup/registerWebsocketEvents.ts"
+const sidenavComponentFile = "frontend/src/app/sidenav/sidenav.component.html"
 
+// https://oinam.github.io/entities/
+const singleQuote = String.fromCharCode(39);
+const singleBackQuote = String.fromCharCode(96);
+const doubleQuote = String.fromCharCode(34);
 import fs = require('fs')
 
 customizeAdminSectionChallenge()
 customizeEasterEggChallenge()
+customizeDomXssChallenge()
 
 function customizeAdminSectionChallenge(){
-  replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ getRandomInt(1000)))
+  replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
 }
 
-function customizeEasterEggChallenge():void{
+function customizeEasterEggChallenge(){
   let easterEggURL='/the/devs/are/so/funny/they/hid/an/easter/egg/within/the/easter/egg';
   let encodedEasterEggURL='L2d1ci9xcmlmL25lci9mYi9zaGFhbC9ndXJsL3V2cS9uYS9ybmZncmUvcnR0L2p2Z3V2YS9ndXIvcm5mZ3JlL3J0dA==';
-  let customizedEasterEggURL='/the/student/is/so/funny/he/modified/the/easter/egg/within/the/easter/egg/'+ getRandomInt(999);
+  let customizedEasterEggURL='/the/student/is/so/funny/he/modified/the/easter/egg/within/the/easter/egg/'+ randomInt(999);
   let encodedCustomizedEasterEggURL = encodeBase85(caesarCipher(customizedEasterEggURL,13))
   replaceStringInFile(serverFile, stringWithinQuotes(easterEggURL),stringWithinQuotes(customizedEasterEggURL))
   replaceStringInFile(easterEggFile, encodedEasterEggURL,encodedCustomizedEasterEggURL)
+}
+
+function customizeDomXssChallenge(){
+  // '<iframe src="javascript:alert(`xss`)">'
+  replaceStringInFile(registerWebsocketEventsFile,stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomInt(999)))
+  let randomNumber = randomInt(999)
+  replaceStringInFile(appRoutingFile,stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber))
+  replaceStringInFile(sidenavComponentFile,stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber))
 }
 
 function replaceStringInFile(filepath: string, searchValue: string, replaceValue : string){
@@ -43,7 +57,7 @@ function stringWithinQuotes(value: String){
   return singleQuote + value + singleQuote;
 }
 
-function getRandomInt(max: number) {
+function randomInt(max: number) {
   return Math.floor(Math.random() * max);
 }
 
@@ -59,7 +73,7 @@ function encodeBase85(value: String) {
   }(c, b.length),  String.fromCharCode.apply(String, c);
 }
 
-function caesarCipher(x: string, y: number): string {
+function caesarCipher(x: string, y: number) {
   let result = "";
   for (let i = 0; i < x.length; i++) {
     let charCode = x.charCodeAt(i);
@@ -79,5 +93,13 @@ function caesarCipher(x: string, y: number): string {
     }
   }
   return result;
+}
+
+function stringWithinBackQuotes(value: String){
+  return singleBackQuote + value + singleBackQuote;
+}
+
+function stringWithinDoubleQuotes(value: String){
+  return  doubleQuote + value + doubleQuote;
 }
 
