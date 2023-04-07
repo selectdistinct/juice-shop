@@ -53,7 +53,7 @@ function customizePrivacyPolicyInspectionChallenge(){
   let newParagraph = '<p>For further legal information of collectiong your data, please have a look at article ' +
     '<span class="hot">'+ randomNumber +'</span>of the DSGVO at the <a href="https://dsgvo-gesetz.de/" aria-label="Link to the DSGVO">DSGVO website</a> </p> </section>'
   let privacyPolicyLink = '/we/may/also/instruct/you/to/refuse/all/reasonably/necessary/responsibility'
-  if(fileContainsString(privacyPolicyComponentFile, "DSGVO")){
+  if(!fileContainsString(privacyPolicyComponentFile, "DSGVO")){
     replaceStringInFile(privacyPolicyComponentFile, '\<\/section\>',newParagraph)
     replaceStringInFile(serverFile, stringWithinQuotes(privacyPolicyLink), stringWithinQuotes(privacyPolicyLink + '/' + randomNumber))
   }
