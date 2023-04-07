@@ -8,6 +8,7 @@ const serverFile = "server.ts"
 const easterEggFile = "ftp/eastere.gg"
 const registerWebsocketEventsFile = "lib/startup/registerWebsocketEvents.ts"
 const sidenavComponentFile = "frontend/src/app/sidenav/sidenav.component.html"
+const challengesYamlFile = "data/static/challenges.yml"
 
 // https://oinam.github.io/entities/
 const singleQuote = String.fromCharCode(39);
@@ -33,11 +34,16 @@ function customizeEasterEggChallenge(){
 }
 
 function customizeDomXssChallenge(){
-  // '<iframe src="javascript:alert(`xss`)">'
-  replaceStringInFile(registerWebsocketEventsFile,stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomInt(999)))
-  let randomNumber = randomInt(999)
-  replaceStringInFile(appRoutingFile,stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber))
-  replaceStringInFile(sidenavComponentFile,stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber))
+  let randomNumber1 = randomInt(999)
+  let randomNumber2 = randomInt(999)
+  let  challengeDescription = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert\\(' + stringWithinBackQuotes('xss')+'\\)"&gt;</code>.'
+  let challengeDescriptionWithRandomNumber = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert(`xss'+ randomNumber2 + '`)"&gt;</code>.'
+
+  replaceStringInFile(appRoutingFile,stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber1))
+  replaceStringInFile(sidenavComponentFile,stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber1))
+
+  replaceStringInFile(registerWebsocketEventsFile,stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomNumber2))
+  replaceStringInFile(challengesYamlFile,challengeDescription, challengeDescriptionWithRandomNumber)
 }
 
 function replaceStringInFile(filepath: string, searchValue: string, replaceValue : string){
