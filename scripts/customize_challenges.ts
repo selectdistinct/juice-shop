@@ -9,6 +9,7 @@ const easterEggFile = "ftp/eastere.gg"
 const registerWebsocketEventsFile = "lib/startup/registerWebsocketEvents.ts"
 const sidenavComponentFile = "frontend/src/app/sidenav/sidenav.component.html"
 const challengesYamlFile = "data/static/challenges.yml"
+const privacyPolicyComponentFile = "frontend/src/app/privacy-policy/privacy-policy.component.html"
 
 // https://oinam.github.io/entities/
 const singleQuote = String.fromCharCode(39);
@@ -19,6 +20,7 @@ import fs = require('fs')
 customizeAdminSectionChallenge()
 customizeEasterEggChallenge()
 customizeDomXssChallenge()
+customizePrivacyPolicyInspectionChallenge()
 
 function customizeAdminSectionChallenge(){
   replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
@@ -36,24 +38,35 @@ function customizeEasterEggChallenge(){
 function customizeDomXssChallenge(){
   let randomNumber1 = randomInt(999)
   let randomNumber2 = randomInt(999)
-  let  challengeDescription = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert\\(' + stringWithinBackQuotes('xss')+'\\)"&gt;</code>.'
+  let challengeDescription = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert\\(' + stringWithinBackQuotes('xss')+'\\)"&gt;</code>.'
   let challengeDescriptionWithRandomNumber = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert(`xss'+ randomNumber2 + '`)"&gt;</code>.'
 
-  replaceStringInFile(appRoutingFile,stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber1))
-  replaceStringInFile(sidenavComponentFile,stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber1))
+  replaceStringInFile(appRoutingFile, stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber1))
+  replaceStringInFile(sidenavComponentFile, stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber1))
 
-  replaceStringInFile(registerWebsocketEventsFile,stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomNumber2))
-  replaceStringInFile(challengesYamlFile,challengeDescription, challengeDescriptionWithRandomNumber)
+  replaceStringInFile(registerWebsocketEventsFile, stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomNumber2))
+  replaceStringInFile(challengesYamlFile, challengeDescription, challengeDescriptionWithRandomNumber)
 }
 
-function replaceStringInFile(filepath: string, searchValue: string, replaceValue : string){
+function customizePrivacyPolicyInspectionChallenge(){
+  let randomNumber = randomInt(99)
+  let newParagraph = '<p>For further legal information of collectiong your data, please have a look at article ' +
+    '<span class="hot">'+ randomNumber +'</span>of the DSGVO at the <a href="https://dsgvo-gesetz.de/" aria-label="Link to the DSGVO">DSGVO website</a> </p> </section>'
+  let privacyPolicyLink = '/we/may/also/instruct/you/to/refuse/all/reasonably/necessary/responsibility'
+  if(fileContainsString(privacyPolicyComponentFile, "DSGVO")){
+    replaceStringInFile(privacyPolicyComponentFile, '\<\/section\>',newParagraph)
+    replaceStringInFile(serverFile, stringWithinQuotes(privacyPolicyLink), stringWithinQuotes(privacyPolicyLink + '/' + randomNumber))
+  }
+}
+
+function replaceStringInFile(filePath: string, searchValue: string, replaceValue : string){
   let regEx = new RegExp(searchValue,"g")
-  fs.readFile(filepath, 'utf8', function (err,data) {
+  fs.readFile(filePath, 'utf8', function (err,data) {
     if (err) {
       return console.log(err);
     }
     let result = data.replace(regEx, replaceValue);
-    fs.writeFile(filepath, result, 'utf8', function (err) {
+    fs.writeFile(filePath, result, 'utf8', function (err) {
       if (err) return console.log(err);
     });
   });
@@ -109,3 +122,12 @@ function stringWithinDoubleQuotes(value: String){
   return  doubleQuote + value + doubleQuote;
 }
 
+function fileContainsString(filePath: string, searchValue: string): boolean {
+  try {
+    const fileContents = fs.readFileSync(filePath, "utf8");
+    return fileContents.includes(searchValue);
+  } catch (error) {
+    console.error(`Error reading file: ${error}`);
+    return false;
+  }
+}
