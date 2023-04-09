@@ -12,6 +12,8 @@ const challengesYamlFile = "data/static/challenges.yml"
 const privacyPolicyComponentFile = "frontend/src/app/privacy-policy/privacy-policy.component.html"
 const fileUploadFile = "routes/fileUpload.ts"
 const verifyFile = "routes/verify.ts"
+const usersYamlFile = "data/static/users.yml"
+const loginFile = "routes/login.ts"
 
 // https://oinam.github.io/entities/
 const singleQuote = String.fromCharCode(39);
@@ -25,6 +27,7 @@ customizeEasterEggChallenge()
 customizeDomXssChallenge()
 customizePrivacyPolicyInspectionChallenge()
 customizeXXEDataAccessChallenge()
+customizePasswordStrengthChallenge()
 
 async function customizeAdminSectionChallenge(){
   await replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
@@ -116,6 +119,13 @@ async function customizeXXEDataAccessChallenge(){
   await replaceStringInFile(challengesYamlFile, oldDescription, newDescription)
 }
 
+async function customizePasswordStrengthChallenge(){
+  let adminPassword = 'admin123'
+  let newAdminPassword = randomPasswordFromList()
+  await replaceStringInFile(usersYamlFile,stringWithinQuotes(adminPassword),stringWithinQuotes(newAdminPassword))
+  await replaceStringInFile(loginFile,stringWithinQuotes(adminPassword),stringWithinQuotes(newAdminPassword))
+}
+
 async function replaceStringInFile(filePath: string, searchValue: string, replaceValue : string){
   const regEx = new RegExp(searchValue,"g");
   try {
@@ -193,4 +203,21 @@ function createFolderAndFile(folderPath: string, fileName: string, fileContent: 
   }
   const filePath = `${folderPath}/${fileName}`;
   fs.writeFileSync(filePath, fileContent, 'utf8');
+}
+
+function randomPasswordFromList(){
+  const passwords: string[] = [
+    "123456",
+    "password",
+    "12345678",
+    "qwerty",
+    "123456789",
+    "12345",
+    "1234",
+    "111111",
+    "1234567",
+    "dragon"
+  ];
+  const randomIndex = Math.floor(Math.random() * passwords.length);
+  return passwords[randomIndex];
 }
