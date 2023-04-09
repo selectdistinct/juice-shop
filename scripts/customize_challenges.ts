@@ -10,17 +10,21 @@ const registerWebsocketEventsFile = "lib/startup/registerWebsocketEvents.ts"
 const sidenavComponentFile = "frontend/src/app/sidenav/sidenav.component.html"
 const challengesYamlFile = "data/static/challenges.yml"
 const privacyPolicyComponentFile = "frontend/src/app/privacy-policy/privacy-policy.component.html"
+const fileUploadFile = "routes/fileUpload.ts"
+const verifyFile = "routes/verify.ts"
 
 // https://oinam.github.io/entities/
 const singleQuote = String.fromCharCode(39);
 const singleBackQuote = String.fromCharCode(96);
 const doubleQuote = String.fromCharCode(34);
 import fs = require('fs')
+import * as fsPromise from 'fs/promises';
 
 customizeAdminSectionChallenge()
 customizeEasterEggChallenge()
 customizeDomXssChallenge()
 customizePrivacyPolicyInspectionChallenge()
+customizeXXEDataAccessChallenge()
 
 function customizeAdminSectionChallenge(){
   replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
@@ -59,17 +63,68 @@ function customizePrivacyPolicyInspectionChallenge(){
   }
 }
 
-function replaceStringInFile(filePath: string, searchValue: string, replaceValue : string){
-  let regEx = new RegExp(searchValue,"g")
-  fs.readFile(filePath, 'utf8', function (err,data) {
-    if (err) {
-      return console.log(err);
-    }
-    let result = data.replace(regEx, replaceValue);
-    fs.writeFile(filePath, result, 'utf8', function (err) {
-      if (err) return console.log(err);
-    });
-  });
+async function customizeXXEDataAccessChallenge(){
+  let randomNumber = randomInt(9999)
+  let challengeUtilString = 'challengeUtils.solveIf\\(challenges.xxeFileDisclosureChallenge'
+
+  //delete the current solve logic for the challenge
+  if(!fileContainsString(fileUploadFile,'\/\/'+ challengeUtilString)) {
+    await replaceStringInFile(fileUploadFile, challengeUtilString, '\/\/' + challengeUtilString)
+  }
+
+  //add a new solving logic to the verify.ts file
+  let dlpPastebinChallengeRegexCode ='notSolved\\(challenges.dlpPastebinDataLeakChallenge\\)\\) '
+    +'{\r\n    dlpPastebinDataLeakChallenge\\(\\)\r\n  }'
+  let dlpPastebinChallengeReplacementCode ='notSolved\(challenges.dlpPastebinDataLeakChallenge\)\) ' +
+    '{\r\n    dlpPastebinDataLeakChallenge\(\)\r\n  }'
+  let xxeFileDisclosureChallengeCode='\r\n  if \(challengeUtils.notSolved\(challenges.xxeFileDisclosureChallenge\)\) ' +
+    '{\r\n    xxeFileDisclosureChallenge\(\)\r\n  }'
+
+  if (!fileContainsString(verifyFile,'notSolved\(challenges.xxeFileDisclosureChallenge\)')){
+    await replaceStringInFile(verifyFile, dlpPastebinChallengeRegexCode,dlpPastebinChallengeReplacementCode + xxeFileDisclosureChallengeCode)
+  }
+
+  let newFileDisclosureChallengeFunction = 'function xxeFileDisclosureChallenge \(\) {\n' +
+    '  FeedbackModel.findAndCountAll\({ where: { comment: { [Op.like]: \'%' + randomNumber + '%\' } } }\n' +
+    '  \).then\(\({ count }: { count: number }\) => {\n' +
+    '    if \(count > 0\) {\n' +
+    '      challengeUtils.solve\(challenges.xxeFileDisclosureChallenge\)\n' +
+    '    }\n' +
+    '  }\).catch\(\(\) => {\n' +
+    '    throw new Error\(\'Unable to get data for known vulnerabilities. Please try again\'\)\n' +
+    '  })\n' +
+    '  ComplaintModel.findAndCountAll\({ where: { message: { [Op.like]: \'%' + randomNumber + '%\' } } }\n' +
+    '  \).then\(\({ count }: { count: number }\) => {\n' +
+    '    if \(count > 0\) {\n' +
+    '      challengeUtils.solve\(challenges.xxeFileDisclosureChallenge\)\n' +
+    '    }\n' +
+    '  }\).catch\(\(\) => {\n' +
+    '    throw new Error\(\'Unable to get data for known vulnerabilities. Please try again\'\)\n' +
+    '  }\)\n' +
+    '}\n\n' +
+    'function changeProductChallenge'
+
+  if(!fileContainsString(verifyFile,'function xxeFileDisclosureChallenge')){
+    await replaceStringInFile(verifyFile,'function changeProductChallenge', newFileDisclosureChallengeFunction)
+    //create a new file where a password has to be extracted from
+    createFolderAndFile('scripts','password.txt','Password: \'' + randomNumber + '\'')
+  }
+
+  //update the challenge description
+  let oldDescription = '<code>C:\\\\Windows\\\\system\\.ini</code> or <code>/etc/passwd</code> from the server\\.'
+  let newDescription = '<code>' + __dirname + '\\password.txt'+'</code> from the server and send us the password in the feedback or complaint Form.'
+  await replaceStringInFile(challengesYamlFile, oldDescription, newDescription)
+}
+
+async function replaceStringInFile(filePath: string, searchValue: string, replaceValue : string){
+  const regEx = new RegExp(searchValue,"g");
+  try {
+    const data = await fsPromise.readFile(filePath, 'utf8');
+    const result = data.replace(regEx, replaceValue);
+    await fsPromise.writeFile(filePath, result, 'utf8');
+  } catch (err) {
+    console.log(err);
+  }
 }
 
 function stringWithinQuotes(value: String){
@@ -130,4 +185,12 @@ function fileContainsString(filePath: string, searchValue: string): boolean {
     console.error(`Error reading file: ${error}`);
     return false;
   }
+}
+
+function createFolderAndFile(folderPath: string, fileName: string, fileContent: string) {
+  if (!fs.existsSync(folderPath)) {
+    fs.mkdirSync(folderPath);
+  }
+  const filePath = `${folderPath}/${fileName}`;
+  fs.writeFileSync(filePath, fileContent, 'utf8');
 }
