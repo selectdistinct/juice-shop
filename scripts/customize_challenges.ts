@@ -26,40 +26,40 @@ customizeDomXssChallenge()
 customizePrivacyPolicyInspectionChallenge()
 customizeXXEDataAccessChallenge()
 
-function customizeAdminSectionChallenge(){
-  replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
+async function customizeAdminSectionChallenge(){
+  await replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
 }
 
-function customizeEasterEggChallenge(){
+async function customizeEasterEggChallenge(){
   let easterEggURL='/the/devs/are/so/funny/they/hid/an/easter/egg/within/the/easter/egg';
   let encodedEasterEggURL='L2d1ci9xcmlmL25lci9mYi9zaGFhbC9ndXJsL3V2cS9uYS9ybmZncmUvcnR0L2p2Z3V2YS9ndXIvcm5mZ3JlL3J0dA==';
   let customizedEasterEggURL='/the/student/is/so/funny/he/modified/the/easter/egg/within/the/easter/egg/'+ randomInt(999);
   let encodedCustomizedEasterEggURL = encodeBase85(caesarCipher(customizedEasterEggURL,13))
-  replaceStringInFile(serverFile, stringWithinQuotes(easterEggURL),stringWithinQuotes(customizedEasterEggURL))
-  replaceStringInFile(easterEggFile, encodedEasterEggURL,encodedCustomizedEasterEggURL)
+  await replaceStringInFile(serverFile, stringWithinQuotes(easterEggURL),stringWithinQuotes(customizedEasterEggURL))
+  await replaceStringInFile(easterEggFile, encodedEasterEggURL,encodedCustomizedEasterEggURL)
 }
 
-function customizeDomXssChallenge(){
+async function customizeDomXssChallenge(){
   let randomNumber1 = randomInt(999)
   let randomNumber2 = randomInt(999)
   let challengeDescription = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert\\(' + stringWithinBackQuotes('xss')+'\\)"&gt;</code>.'
   let challengeDescriptionWithRandomNumber = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert(`xss'+ randomNumber2 + '`)"&gt;</code>.'
 
-  replaceStringInFile(appRoutingFile, stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber1))
-  replaceStringInFile(sidenavComponentFile, stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber1))
+  await replaceStringInFile(appRoutingFile, stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber1))
+  await replaceStringInFile(sidenavComponentFile, stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber1))
 
-  replaceStringInFile(registerWebsocketEventsFile, stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomNumber2))
-  replaceStringInFile(challengesYamlFile, challengeDescription, challengeDescriptionWithRandomNumber)
+  await replaceStringInFile(registerWebsocketEventsFile, stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomNumber2))
+  await replaceStringInFile(challengesYamlFile, challengeDescription, challengeDescriptionWithRandomNumber)
 }
 
-function customizePrivacyPolicyInspectionChallenge(){
+async function customizePrivacyPolicyInspectionChallenge(){
   let randomNumber = randomInt(99)
   let newParagraph = '<p>For further legal information of collectiong your data, please have a look at article ' +
     '<span class="hot">'+ randomNumber +'</span>of the DSGVO at the <a href="https://dsgvo-gesetz.de/" aria-label="Link to the DSGVO">DSGVO website</a> </p> </section>'
   let privacyPolicyLink = '/we/may/also/instruct/you/to/refuse/all/reasonably/necessary/responsibility'
   if(!fileContainsString(privacyPolicyComponentFile, "DSGVO")){
-    replaceStringInFile(privacyPolicyComponentFile, '\<\/section\>',newParagraph)
-    replaceStringInFile(serverFile, stringWithinQuotes(privacyPolicyLink), stringWithinQuotes(privacyPolicyLink + '/' + randomNumber))
+    await replaceStringInFile(privacyPolicyComponentFile, '\<\/section\>',newParagraph)
+    await replaceStringInFile(serverFile, stringWithinQuotes(privacyPolicyLink), stringWithinQuotes(privacyPolicyLink + '/' + randomNumber))
   }
 }
 
