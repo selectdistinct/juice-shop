@@ -28,6 +28,7 @@ customizeDomXssChallenge()
 customizePrivacyPolicyInspectionChallenge()
 customizeXXEDataAccessChallenge()
 customizePasswordStrengthChallenge()
+customizeAccessLogChallenge()
 
 async function customizeAdminSectionChallenge(){
   await replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
@@ -124,6 +125,12 @@ async function customizePasswordStrengthChallenge(){
   let newAdminPassword = randomPasswordFromList()
   await replaceStringInFile(usersYamlFile,stringWithinQuotes(adminPassword),stringWithinQuotes(newAdminPassword))
   await replaceStringInFile(loginFile,stringWithinQuotes(adminPassword),stringWithinQuotes(newAdminPassword))
+}
+
+async function customizeAccessLogChallenge(){
+  let randomNumber = randomInt(999)
+  await replaceStringInFile(serverFile,'/logs/','/logs' + randomNumber + '/')
+  await replaceStringInFile(serverFile,'/logs' + singleQuote,'/logs' + randomNumber + singleQuote)
 }
 
 async function replaceStringInFile(filePath: string, searchValue: string, replaceValue : string){
