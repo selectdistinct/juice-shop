@@ -48,6 +48,7 @@ For a detailed introduction, full list of features and architecture overview ple
     - [Google Compute Engine Instance](#google-compute-engine-instance)
     - [Heroku](#heroku)
     - [Gitpod](#gitpod)
+    - [Randomizing Challenges](#randomizing-challenges)
 - [Demo](#demo)
 - [Documentation](#documentation)
     - [Node.js version compatibility](#nodejs-version-compatibility)
@@ -188,6 +189,23 @@ Heroku_ button will deploy your forked version of the application.
 
 3. Your Juice Shop instance is now also available at `https://3000-<GITPOD_WORKSPACE_ID>.<GITPOD_HOSTING_ZONE>.gitpod.io`.
 
+### Randomize Challenges
+In addition to the cheat score, another cheat prevention has been added to the Juice Shop. A couple of challenges, listed in the table below, can be randomized. That means, that certain parts or components of the challenge are chaned. As a result, these challenges can no longer be solved with sample solutions, for example.  
+
+| OWASP Top 10 category                      | Challenge                 |
+|--------------------------------------------|---------------------------|
+|  Broken Access Control                     | Admin Section             |
+| Cryptographic Failures                     | Nested Easter Egg         |
+| Injection                                  | DOM XSS                   |
+| Insecure Design                            | Privacy Policy Inspection |
+| Security Misconfiguration                  | XXE Data Access           |
+| Identification and Authentication Failures | Password Strength         |
+| Serve Side Request Fogery                  | Access Log                |
+
+If you want to use this feature, run these commands
+1. Install the application (if not already been done) with `npm install`
+2. `npm run build:customizechallenges`
+3. `npm start`
 ## Demo
 
 Feel free to have a look at the latest version of OWASP Juice Shop:
