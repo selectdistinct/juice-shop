@@ -19,6 +19,7 @@ const loginFile = "routes/login.ts"
 const singleQuote = String.fromCharCode(39);
 const singleBackQuote = String.fromCharCode(96);
 const doubleQuote = String.fromCharCode(34);
+const fileQueue: { filePath: any; searchValue: any; replaceValue: any }[] = [];
 import fs = require('fs')
 import * as fsPromise from 'fs/promises';
 
@@ -31,16 +32,16 @@ customizePasswordStrengthChallenge()
 customizeAccessLogChallenge()
 
 async function customizeAdminSectionChallenge(){
-  await replaceStringInFile(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
+  await enqueueFileForStringReplacement(appRoutingFile,stringWithinQuotes('administration'), stringWithinQuotes('administration'+ randomInt(1000)))
 }
 
 async function customizeEasterEggChallenge(){
   let easterEggURL='/the/devs/are/so/funny/they/hid/an/easter/egg/within/the/easter/egg';
   let encodedEasterEggURL='L2d1ci9xcmlmL25lci9mYi9zaGFhbC9ndXJsL3V2cS9uYS9ybmZncmUvcnR0L2p2Z3V2YS9ndXIvcm5mZ3JlL3J0dA==';
   let customizedEasterEggURL='/the/student/is/so/funny/he/modified/the/easter/egg/within/the/easter/egg/'+ randomInt(999);
-  let encodedCustomizedEasterEggURL = encodeBase85(caesarCipher(customizedEasterEggURL,13))
-  await replaceStringInFile(serverFile, stringWithinQuotes(easterEggURL),stringWithinQuotes(customizedEasterEggURL))
-  await replaceStringInFile(easterEggFile, encodedEasterEggURL,encodedCustomizedEasterEggURL)
+  let encodedCustomizedEasterEggURL = encodeBase85(caesarCipher(customizedEasterEggURL,randomInt(26)))
+  await enqueueFileForStringReplacement(serverFile, stringWithinQuotes(easterEggURL),stringWithinQuotes(customizedEasterEggURL))
+  await enqueueFileForStringReplacement(easterEggFile, encodedEasterEggURL,encodedCustomizedEasterEggURL)
 }
 
 async function customizeDomXssChallenge(){
@@ -49,21 +50,21 @@ async function customizeDomXssChallenge(){
   let challengeDescription = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert\\(' + stringWithinBackQuotes('xss')+'\\)"&gt;</code>.'
   let challengeDescriptionWithRandomNumber = 'Perform a <i>DOM</i> XSS attack with <code>&lt;iframe src="javascript:alert(`xss'+ randomNumber2 + '`)"&gt;</code>.'
 
-  await replaceStringInFile(appRoutingFile, stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber1))
-  await replaceStringInFile(sidenavComponentFile, stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber1))
+  await enqueueFileForStringReplacement(appRoutingFile, stringWithinQuotes('score-board'), stringWithinQuotes('score-board' + randomNumber1))
+  await enqueueFileForStringReplacement(sidenavComponentFile, stringWithinDoubleQuotes("/score-board"), stringWithinDoubleQuotes("/score-board" + randomNumber1))
 
-  await replaceStringInFile(registerWebsocketEventsFile, stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomNumber2))
-  await replaceStringInFile(challengesYamlFile, challengeDescription, challengeDescriptionWithRandomNumber)
+  await enqueueFileForStringReplacement(registerWebsocketEventsFile, stringWithinBackQuotes('xss'), stringWithinBackQuotes('xss'+ randomNumber2))
+  await enqueueFileForStringReplacement(challengesYamlFile, challengeDescription, challengeDescriptionWithRandomNumber)
 }
 
 async function customizePrivacyPolicyInspectionChallenge(){
   let randomNumber = randomInt(99)
   let newParagraph = '<p>For further legal information of collectiong your data, please have a look at article ' +
-    '<span class="hot">'+ randomNumber +'</span>of the DSGVO at the <a href="https://dsgvo-gesetz.de/" aria-label="Link to the DSGVO">DSGVO website</a> </p> </section>'
+    '<span class="hot">'+ randomNumber +'</span> of the DSGVO at the <a href="https://dsgvo-gesetz.de/" aria-label="Link to the DSGVO">DSGVO website</a> </p> </section>'
   let privacyPolicyLink = '/we/may/also/instruct/you/to/refuse/all/reasonably/necessary/responsibility'
   if(!fileContainsString(privacyPolicyComponentFile, "DSGVO")){
-    await replaceStringInFile(privacyPolicyComponentFile, '\<\/section\>',newParagraph)
-    await replaceStringInFile(serverFile, stringWithinQuotes(privacyPolicyLink), stringWithinQuotes(privacyPolicyLink + '/' + randomNumber))
+    await enqueueFileForStringReplacement(privacyPolicyComponentFile, '\<\/section\>',newParagraph)
+    await enqueueFileForStringReplacement(serverFile, stringWithinQuotes(privacyPolicyLink), stringWithinQuotes(privacyPolicyLink + '/' + randomNumber))
   }
 }
 
@@ -73,7 +74,7 @@ async function customizeXXEDataAccessChallenge(){
 
   //delete the current solve logic for the challenge
   if(!fileContainsString(fileUploadFile,'\/\/'+ challengeUtilString)) {
-    await replaceStringInFile(fileUploadFile, challengeUtilString, '\/\/' + challengeUtilString)
+    await enqueueFileForStringReplacement(fileUploadFile, challengeUtilString, '\/\/' + challengeUtilString)
   }
 
   //add a new solving logic to the verify.ts file
@@ -85,7 +86,7 @@ async function customizeXXEDataAccessChallenge(){
     '{\r\n    xxeFileDisclosureChallenge\(\)\r\n  }'
 
   if (!fileContainsString(verifyFile,'notSolved\(challenges.xxeFileDisclosureChallenge\)')){
-    await replaceStringInFile(verifyFile, dlpPastebinChallengeRegexCode,dlpPastebinChallengeReplacementCode + xxeFileDisclosureChallengeCode)
+    await enqueueFileForStringReplacement(verifyFile, dlpPastebinChallengeRegexCode,dlpPastebinChallengeReplacementCode + xxeFileDisclosureChallengeCode)
   }
 
   let newFileDisclosureChallengeFunction = 'function xxeFileDisclosureChallenge \(\) {\n' +
@@ -109,28 +110,46 @@ async function customizeXXEDataAccessChallenge(){
     'function changeProductChallenge'
 
   if(!fileContainsString(verifyFile,'function xxeFileDisclosureChallenge')){
-    await replaceStringInFile(verifyFile,'function changeProductChallenge', newFileDisclosureChallengeFunction)
+    await enqueueFileForStringReplacement(verifyFile,'function changeProductChallenge', newFileDisclosureChallengeFunction)
     //create a new file where a password has to be extracted from
-    createFolderAndFile('scripts','password.txt','Password: \'' + randomNumber + '\'')
+    createFolderAndFile('scripts','password.txt','Password is ' + randomNumber)
   }
 
   //update the challenge description
   let oldDescription = '<code>C:\\\\Windows\\\\system\\.ini</code> or <code>/etc/passwd</code> from the server\\.'
-  let newDescription = '<code>' + __dirname + '\\password.txt'+'</code> from the server and send us the password in the feedback or complaint Form.'
-  await replaceStringInFile(challengesYamlFile, oldDescription, newDescription)
+  let newDescription = '<code>' + __dirname + '\\password.txt'+'</code> from the server and send us the password in the feedback or complaint form.'
+  await enqueueFileForStringReplacement(challengesYamlFile, oldDescription, newDescription)
 }
 
 async function customizePasswordStrengthChallenge(){
   let adminPassword = 'admin123'
   let newAdminPassword = randomPasswordFromList()
-  await replaceStringInFile(usersYamlFile,stringWithinQuotes(adminPassword),stringWithinQuotes(newAdminPassword))
-  await replaceStringInFile(loginFile,stringWithinQuotes(adminPassword),stringWithinQuotes(newAdminPassword))
+  await enqueueFileForStringReplacement(usersYamlFile,stringWithinQuotes(adminPassword),stringWithinQuotes(newAdminPassword))
+  await enqueueFileForStringReplacement(loginFile,stringWithinQuotes(adminPassword),stringWithinQuotes(newAdminPassword))
 }
 
 async function customizeAccessLogChallenge(){
   let randomNumber = randomInt(999)
-  await replaceStringInFile(serverFile,'/logs/','/logs' + randomNumber + '/')
-  await replaceStringInFile(serverFile,'/logs' + singleQuote,'/logs' + randomNumber + singleQuote)
+  await enqueueFileForStringReplacement(serverFile,'/logs/','/logs' + randomNumber + '/')
+  await enqueueFileForStringReplacement(serverFile,'/logs' + singleQuote,'/logs' + randomNumber + singleQuote)
+}
+
+async function enqueueFileForStringReplacement(filePath: string, searchValue: string, replaceValue: string) {
+  fileQueue.push({ filePath, searchValue, replaceValue });
+  if (fileQueue.length === 1) {
+    // Only start processing the queue if it was previously empty
+    await processFileQueue();
+  }
+}
+
+async function processFileQueue() {
+  if (fileQueue.length === 0) {
+    return;
+  }
+  const { filePath, searchValue, replaceValue } = fileQueue[0];
+  await replaceStringInFile(filePath, searchValue, replaceValue);
+  fileQueue.shift();
+  await processFileQueue();
 }
 
 async function replaceStringInFile(filePath: string, searchValue: string, replaceValue : string){
